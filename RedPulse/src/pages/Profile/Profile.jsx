@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../hooks/useAuth";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,8 @@ import {
   FaCamera,
 } from "react-icons/fa";
 
+const BD_API = "https://bdapis.com/api/v1.2";
+
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const genders = ["male", "female", "other"];
 
@@ -35,12 +37,24 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("info");
   const fileInputRef = useRef(null);
 
+  const [divisions, setDivisions] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [upazilas, setUpazilas] = useState([]);
+  const [addressLoading, setAddressLoading] = useState({
+    divisions: false,
+    districts: false,
+    upazilas: false,
+  });
+
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
@@ -52,12 +66,94 @@ const Profile = () => {
         ? new Date(user.dateOfBirth).toISOString().split("T")[0]
         : "",
       bio: user?.bio || "",
-      "address.division": user?.address?.division || "",
-      "address.district": user?.address?.district || "",
-      "address.upazila": user?.address?.upazila || "",
-      "address.details": user?.address?.details || "",
+      address: {
+        division: user?.address?.division || "",
+        district: user?.address?.district || "",
+        upazila: user?.address?.upazila || "",
+        details: user?.address?.details || "",
+      },
     },
   });
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const watchedDivision = watch("address.division");
+  const watchedDistrict = watch("address.district");
+
+  useEffect(() => {
+    const fetchDivisions = async () => {
+      setAddressLoading((prev) => ({ ...prev, divisions: true }));
+      try {
+        const res = await fetch(`${BD_API}/divisions`);
+        const data = await res.json();
+        if (data.status?.code === 200) {
+          setDivisions(data.data.map((d) => d.division));
+        }
+      } catch {
+        toast.error("Failed to load divisions");
+      } finally {
+        setAddressLoading((prev) => ({ ...prev, divisions: false }));
+      }
+    };
+    fetchDivisions();
+  }, []);
+
+  useEffect(() => {
+    if (!watchedDivision) {
+      setDistricts([]);
+      return;
+    }
+    const fetchDistricts = async () => {
+      setAddressLoading((prev) => ({ ...prev, districts: true }));
+      setDistricts([]);
+      setUpazilas([]);
+      setValue("address.district", "", { shouldValidate: true });
+      setValue("address.upazila", "", { shouldValidate: true });
+      try {
+        const res = await fetch(
+          `${BD_API}/division/${encodeURIComponent(watchedDivision)}`,
+        );
+        const data = await res.json();
+        if (data.status?.code === 200) {
+          setDistricts(data.data.map((d) => d.district));
+        }
+      } catch {
+        toast.error("Failed to load districts");
+      } finally {
+        setAddressLoading((prev) => ({ ...prev, districts: false }));
+      }
+    };
+    fetchDistricts();
+  }, [watchedDivision, setValue]);
+
+  useEffect(() => {
+    if (!watchedDistrict) {
+      setUpazilas([]);
+      return;
+    }
+    const fetchUpazilas = async () => {
+      setAddressLoading((prev) => ({ ...prev, upazilas: true }));
+      setUpazilas([]);
+      setValue("address.upazila", "", { shouldValidate: true });
+      try {
+        const res = await fetch(
+          `${BD_API}/district/${encodeURIComponent(watchedDistrict)}`,
+        );
+        const data = await res.json();
+        if (data.status?.code === 200 && data.data?.length > 0) {
+          const raw = data.data[0].upazillas || [];
+          const names = raw.map((u) =>
+            typeof u === "string" ? u : u.en || "",
+          );
+          setUpazilas(names);
+        }
+      } catch {
+        toast.error("Failed to load upazilas");
+      } finally {
+        setAddressLoading((prev) => ({ ...prev, upazilas: false }));
+      }
+    };
+    fetchUpazilas();
+  }, [watchedDistrict, setValue]);
 
   if (loading) {
     return (
@@ -84,12 +180,39 @@ const Profile = () => {
         ? new Date(user.dateOfBirth).toISOString().split("T")[0]
         : "",
       bio: user?.bio || "",
-      "address.division": user?.address?.division || "",
-      "address.district": user?.address?.district || "",
-      "address.upazila": user?.address?.upazila || "",
-      "address.details": user?.address?.details || "",
+      address: {
+        division: user?.address?.division || "",
+        district: user?.address?.district || "",
+        upazila: user?.address?.upazila || "",
+        details: user?.address?.details || "",
+      },
     });
     setIsEditing(true);
+
+    if (user?.address?.division) {
+      fetch(`${BD_API}/division/${encodeURIComponent(user.address.division)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.status?.code === 200) {
+            setDistricts(data.data.map((d) => d.district));
+          }
+        })
+        .catch(() => {});
+    }
+    if (user?.address?.district) {
+      fetch(`${BD_API}/district/${encodeURIComponent(user.address.district)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.status?.code === 200 && data.data?.length > 0) {
+            const raw = data.data[0].upazillas || [];
+            const names = raw.map((u) =>
+              typeof u === "string" ? u : u.en || "",
+            );
+            setUpazilas(names);
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleCancel = () => {
@@ -100,22 +223,16 @@ const Profile = () => {
   const onSubmit = async (data) => {
     setIsUpdating(true);
     try {
-      const {
-        "address.division": division,
-        "address.district": district,
-        "address.upazila": upazila,
-        "address.details": details,
-        ...rest
-      } = data;
+      const { address, ...rest } = data;
 
       const payload = {
         ...rest,
         weight: Number(rest.weight),
         address: {
-          division,
-          district,
-          upazila,
-          details,
+          division: address.division || "",
+          district: address.district || "",
+          upazila: address.upazila || "",
+          details: address.details || "",
         },
       };
 
@@ -206,13 +323,17 @@ const Profile = () => {
               {/* Avatar */}
               <div className="relative group">
                 {user.avatar ? (
-                  <div className={`avatar ${isUploadingAvatar ? "opacity-50" : ""}`}>
+                  <div
+                    className={`avatar ${isUploadingAvatar ? "opacity-50" : ""}`}
+                  >
                     <div className="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                       <img src={user.avatar} alt={user.name} />
                     </div>
                   </div>
                 ) : (
-                  <div className={`avatar placeholder ${isUploadingAvatar ? "opacity-50" : ""}`}>
+                  <div
+                    className={`avatar placeholder ${isUploadingAvatar ? "opacity-50" : ""}`}
+                  >
                     <div className="bg-primary text-primary-content w-32 h-32 rounded-full">
                       <span className="text-4xl font-bold">
                         {getInitials(user.name)}
@@ -226,7 +347,9 @@ const Profile = () => {
                   <div className="absolute inset-0 w-32 h-32 rounded-full bg-black/60 flex flex-col items-center justify-center gap-1 z-10">
                     <span className="loading loading-spinner loading-sm text-white"></span>
                     <span className="text-white text-xs text-center leading-tight">
-                      {uploadStage === "uploading" ? "Uploading..." : "Saving..."}
+                      {uploadStage === "uploading"
+                        ? "Uploading..."
+                        : "Saving..."}
                     </span>
                   </div>
                 )}
@@ -529,38 +652,76 @@ const Profile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text">Division</span>
+                          <span className="label-text flex items-center gap-2">
+                            <FaMapMarkerAlt className="text-primary" /> Division
+                          </span>
                         </label>
-                        <input
-                          type="text"
-                          className="input input-bordered w-full"
-                          placeholder="Division"
+                        <select
+                          className="select select-bordered w-full"
                           {...register("address.division")}
-                        />
+                          disabled={addressLoading.divisions}
+                        >
+                          <option value="">
+                            {addressLoading.divisions
+                              ? "Loading..."
+                              : "Select Division"}
+                          </option>
+                          {divisions.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text">District</span>
                         </label>
-                        <input
-                          type="text"
-                          className="input input-bordered w-full"
-                          placeholder="District"
+                        <select
+                          className="select select-bordered w-full"
                           {...register("address.district")}
-                        />
+                          disabled={
+                            !watchedDivision || addressLoading.districts
+                          }
+                        >
+                          <option value="">
+                            {addressLoading.districts
+                              ? "Loading..."
+                              : watchedDivision
+                                ? "Select District"
+                                : "Select division first"}
+                          </option>
+                          {districts.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text">Upazila</span>
                         </label>
-                        <input
-                          type="text"
-                          className="input input-bordered w-full"
-                          placeholder="Upazila"
+                        <select
+                          className="select select-bordered w-full"
                           {...register("address.upazila")}
-                        />
+                          disabled={!watchedDistrict || addressLoading.upazilas}
+                        >
+                          <option value="">
+                            {addressLoading.upazilas
+                              ? "Loading..."
+                              : watchedDistrict
+                                ? "Select Upazila"
+                                : "Select district first"}
+                          </option>
+                          {upazilas.map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
