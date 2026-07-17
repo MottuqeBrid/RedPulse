@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     gender: { type: String, enum: ["male", "female", "other"] },
+    weight: { type: Number, min: 0 },
     dateOfBirth: { type: Date },
     bio: { type: String, trim: true },
     blogs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" }],
@@ -38,6 +39,7 @@ const userSchema = new mongoose.Schema(
     },
 
     isAvailable: { type: Boolean, default: true }, // donor ready or not
+    isWillingToDonate: { type: Boolean, default: true }, // donor willing to donate or not
     lastDonationDate: { type: Date },
     totalDonations: { type: Number, default: 0 },
 

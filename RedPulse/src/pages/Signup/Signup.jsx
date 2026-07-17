@@ -1,12 +1,19 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
+import axiosInstance from "../../lib/axiosInstance";
+import { AuthContext } from "../../Context/AuthContext";
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -15,13 +22,26 @@ const Signup = () => {
     watch,
   } = useForm();
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const password = watch("password");
 
-  const onSubmit = (data) => {
-    // eslint-disable-next-line no-unused-vars
+  const onSubmit = async (data) => {
     const { confirmPassword, ...payload } = data;
-    console.log(payload);
+    setServerError("");
+    setIsSubmitting(true);
+
+    try {
+      const res = await axiosInstance.post("auth/register", payload);
+      if (res.data.success) {
+        await login(res.data.token, true);
+        navigate("/");
+      }
+    } catch (err) {
+      setServerError(
+        err.response?.data?.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,6 +52,12 @@ const Signup = () => {
           <p className="text-center text-base-content/60 mb-4">
             Create an account to start saving lives
           </p>
+
+          {serverError && (
+            <div className="alert alert-error mb-2">
+              <span>{serverError}</span>
+            </div>
+          )}
 
           <form
             onSubmit={handleSubmit(onSubmit)}
@@ -109,7 +135,7 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Blood Group & Gender */}
+            {/* Blood Group & Weight */}
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">
@@ -142,6 +168,32 @@ const Signup = () => {
 
               <div className="form-control">
                 <label className="label">
+                  <span className="label-text">Weight (kg)</span>
+                </label>
+                <input
+                  type="number"
+                  placeholder="60"
+                  min="0"
+                  className={`input input-bordered w-full ${errors.weight ? "input-error" : ""}`}
+                  {...register("weight", {
+                    required: "Weight is required",
+                    min: { value: 25, message: "Minimum weight is 25 kg" },
+                  })}
+                />
+                {errors.weight && (
+                  <label className="label">
+                    <span className="label-text-alt text-error">
+                      {errors.weight.message}
+                    </span>
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Gender & DOB */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
                   <span className="label-text">Gender</span>
                 </label>
                 <select
@@ -157,18 +209,17 @@ const Signup = () => {
                   <option value="other">Other</option>
                 </select>
               </div>
-            </div>
 
-            {/* Date of Birth */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Date of Birth</span>
-              </label>
-              <input
-                type="date"
-                className="input input-bordered w-full"
-                {...register("dateOfBirth")}
-              />
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Date of Birth</span>
+                </label>
+                <input
+                  type="date"
+                  className="input input-bordered w-full"
+                  {...register("dateOfBirth")}
+                />
+              </div>
             </div>
 
             {/* Password */}
@@ -196,40 +247,13 @@ const Signup = () => {
                   tabIndex={-1}
                 >
                   {showPassword ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                     </svg>
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
                 </button>
@@ -266,40 +290,13 @@ const Signup = () => {
                   tabIndex={-1}
                 >
                   {showConfirm ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                     </svg>
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
                 </button>
@@ -313,8 +310,12 @@ const Signup = () => {
               )}
             </div>
 
-            <button type="submit" className="btn btn-primary w-full mt-2">
-              Sign Up
+            <button
+              type="submit"
+              className={`btn btn-primary w-full mt-2 ${isSubmitting ? "loading" : ""}`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating Account..." : "Sign Up"}
             </button>
           </form>
 

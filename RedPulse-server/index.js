@@ -14,6 +14,7 @@ const v = process.env.API_VERSION || "v1";
 
 app.use(cors());
 app.use(express.json());
+app.set("trust proxy", true);
 
 // Define your routes here
 app.get("/", (req, res) => {
