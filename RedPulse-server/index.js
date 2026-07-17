@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { connectDB } from "./lib/db.js";
 
 // routes
 import userRouter from "./route/User.js";
 import cronRouter from "./route/cron.js";
-import { connectDB } from "./lib/db.js";
+import uploadRouter from "./route/Upload.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(`/api/${v}/user`, userRouter);
+app.use(`/api/${v}/upload`, uploadRouter);
 app.use("/api/cron", cronRouter);
 
 app.use((req, res) => {

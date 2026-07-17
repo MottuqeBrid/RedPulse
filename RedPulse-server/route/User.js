@@ -176,12 +176,15 @@ router.patch("/update", userMiddleware, async (req, res) => {
       });
     }
     if (fields == "email" && updateData.email) {
-      const existingUser = await User.findOne({ email: updateData.email });
-      if (existingUser) {
+      const existingEmailUser = await User.findOne({ email: updateData.email });
+      if (existingEmailUser) {
         return res
           .status(400)
           .json({ message: "Email already in use", success: false });
       }
+      const user = await User.findByIdAndUpdate(userId, updateData, {
+        new: true,
+      }).select("-password");
       return res.status(200).json({
         message: "Email updated successfully",
         success: true,
@@ -190,12 +193,15 @@ router.patch("/update", userMiddleware, async (req, res) => {
     }
 
     if (fields == "phone" && updateData.phone) {
-      const existingUser = await User.findOne({ phone: updateData.phone });
-      if (existingUser) {
+      const existingPhoneUser = await User.findOne({ phone: updateData.phone });
+      if (existingPhoneUser) {
         return res
           .status(400)
           .json({ message: "Phone number already in use", success: false });
       }
+      const user = await User.findByIdAndUpdate(userId, updateData, {
+        new: true,
+      }).select("-password");
       return res.status(200).json({
         message: "Phone number updated successfully",
         success: true,

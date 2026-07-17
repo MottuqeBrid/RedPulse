@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema(
     isDeleted: { type: Boolean, default: false },
 
     avatar: { type: String },
+    uploads: [
+      {
+        type: Object,
+        select: false,
+      },
+    ],
 
     devices: [
       {
