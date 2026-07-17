@@ -1,0 +1,12 @@
+{
+  "name": "redpulse-workspace",
+  "private": true,
+  "scripts": {
+    "client": "npm --prefix RedPulse run dev",
+    "server": "npm --prefix RedPulse-server run dev",
+    "dev": "concurrently -n CLIENT,SERVER -c cyan,green \"npm run client\" \"npm run server\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.4"
+  }
+}
