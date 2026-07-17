@@ -1,12 +1,24 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useAuth } from "../../hooks/useAuth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { user, login, loading } = useAuth();
+
+  if (user && !loading) {
+    return navigate("/profile");
+  }
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    login(email, password);
   };
 
   return (
@@ -56,7 +68,10 @@ const Login = () => {
           <div className="divider">OR</div>
           <p className="text-center text-sm">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-primary font-semibold link-hover">
+            <Link
+              to="/signup"
+              className="text-primary font-semibold link-hover"
+            >
               Sign Up
             </Link>
           </p>

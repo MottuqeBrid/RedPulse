@@ -10,7 +10,6 @@ const router = express.Router();
 
 // Define your user-related routes here
 router.post("/register", async (req, res) => {
-  console.log("Request received at /register with body:", req.body);
   try {
     const { name, email, password, bloodGroup, phone, weight } = req.body;
 
@@ -24,6 +23,12 @@ router.post("/register", async (req, res) => {
       return res
         .status(400)
         .json({ message: "Email already in use", success: false });
+    }
+    if (existingUser?.isDeleted) {
+      return res.status(400).json({
+        message: "User account is deleted use another email for registration",
+        success: false,
+      });
     }
     const hashpass = await hashPassword(password);
     console.log("Hashed password:", hashpass);
@@ -71,6 +76,11 @@ router.post("/login", async (req, res) => {
         .status(401)
         .json({ message: "Invalid email or password", success: false });
     }
+    if (user.isDeleted) {
+      return res
+        .status(403)
+        .json({ message: "User account is deleted", success: false });
+    }
 
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
@@ -105,7 +115,7 @@ router.get("/me", userMiddleware, async (req, res) => {
       return res.status(401).json({ message: "Unauthorized", success: false });
     }
     const user = await User.findById(req.user.userId).select("-password");
-    if (!user) {
+    if (!user || user.isDeleted) {
       return res
         .status(404)
         .json({ message: "User not found", success: false });
@@ -114,7 +124,7 @@ router.get("/me", userMiddleware, async (req, res) => {
     if (!tokenExists) {
       return res.status(401).json({ message: "Invalid token", success: false });
     }
-    return res.json({ message: "User found", success: true, user });
+    return res.json({ message: "User found", success: true, data: user });
   } catch (error) {
     return res.status(500).json({ message: "Server error", success: false });
   }
@@ -130,6 +140,105 @@ router.post("/logout", userMiddleware, async (req, res) => {
     await Token.findOneAndDelete({ userId: req.user.userId, token });
     res.clearCookie("token");
     return res.json({ message: "Logout successful", success: true });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+});
+
+router.patch("/update", userMiddleware, async (req, res) => {
+  try {
+    const { password, email, ...updateData } = req.body;
+    const userId = req.user.userId;
+    const { fields } = await req.query;
+
+    const existingUser = await User.findById(userId).select("+password");
+    if (!existingUser || existingUser.isDeleted) {
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+    }
+
+    if (fields == "password" && password) {
+      const hashedPassword = await hashPassword(password);
+      updateData.password = hashedPassword;
+      const user = await User.findByIdAndUpdate(userId, updateData, {
+        new: true,
+      }).select("-password");
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: "User not found", success: false });
+      }
+      return res.status(200).json({
+        message: "Password updated successfully",
+        success: true,
+        data: user,
+      });
+    }
+    if (fields == "email" && updateData.email) {
+      const existingUser = await User.findOne({ email: updateData.email });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ message: "Email already in use", success: false });
+      }
+      return res.status(200).json({
+        message: "Email updated successfully",
+        success: true,
+        data: user,
+      });
+    }
+
+    if (fields == "phone" && updateData.phone) {
+      const existingUser = await User.findOne({ phone: updateData.phone });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ message: "Phone number already in use", success: false });
+      }
+      return res.status(200).json({
+        message: "Phone number updated successfully",
+        success: true,
+        data: user,
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    }).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+    }
+
+    return res.json({
+      message: "User updated successfully",
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+});
+
+router.delete("/delete", userMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { isDeleted: true },
+      { new: true },
+    ).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+    }
+    return res.json({
+      message: "User deleted successfully",
+      success: true,
+    });
   } catch (error) {
     return res.status(500).json({ message: "Server error", success: false });
   }

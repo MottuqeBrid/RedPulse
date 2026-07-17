@@ -12,7 +12,7 @@ export const AuthContext = createContext(null);
 
 const fetchUser = async () => {
   const { data } = await axiosInstance.get("user/me");
-  return data.user;
+  return data.data;
 };
 
 export const AuthProvider = ({ children }) => {
