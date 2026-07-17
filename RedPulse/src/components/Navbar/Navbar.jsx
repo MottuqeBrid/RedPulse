@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import Logo from "../Logo/Logo";
+import ThemeToggle from "../ThemeToggle/ThemeToggle";
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -72,6 +73,7 @@ const Navbar = () => {
         </ul>
       </div>
       <div className="navbar-end gap-2">
+        <ThemeToggle />
         {isLoggedIn ? (
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
@@ -96,18 +98,12 @@ const Navbar = () => {
           </div>
         ) : (
           <>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setIsLoggedIn(true)}
-            >
+            <Link to="/login" className="btn btn-ghost btn-sm">
               Login
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => setIsLoggedIn(true)}
-            >
+            </Link>
+            <Link to="/signup" className="btn btn-primary btn-sm">
               Sign Up
-            </button>
+            </Link>
           </>
         )}
       </div>
