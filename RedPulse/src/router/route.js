@@ -5,6 +5,8 @@ import Login from "../pages/Login/Login";
 import Signup from "../pages/Signup/Signup";
 import NotFound from "../pages/NotFound/NotFound";
 import Profile from "../pages/Profile/Profile";
+import FindDonor from "../pages/FindDonor/FindDonor";
+import DonorProfile from "../pages/DonorProfile/DonorProfile";
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +28,14 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         Component: Profile,
+      },
+      {
+        path: "find-donor",
+        Component: FindDonor,
+      },
+      {
+        path: "donor/:id",
+        Component: DonorProfile,
       },
       {
         path: "*",

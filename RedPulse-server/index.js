@@ -7,6 +7,7 @@ import { connectDB } from "./lib/db.js";
 import userRouter from "./route/User.js";
 import cronRouter from "./route/cron.js";
 import uploadRouter from "./route/Upload.js";
+import donorRouter from "./route/Donor.js";
 
 dotenv.config();
 
@@ -26,10 +27,13 @@ app.get("/", (req, res) => {
   res.send("Welcome to the RedPulse server!");
 });
 
+// API routes
 app.use(`/api/${v}/user`, userRouter);
+app.use(`/api/${v}/donor`, donorRouter);
 app.use(`/api/${v}/upload`, uploadRouter);
 app.use("/api/cron", cronRouter);
 
+// 404 handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -37,6 +41,16 @@ app.use((req, res) => {
   });
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: "Internal Server Error",
+  });
+});
+
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
