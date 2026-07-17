@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 // routes
 import userRouter from "./route/User.js";
-import cronRouter from "./routes/cron.js";
+import cronRouter from "./route/cron.js";
 
 dotenv.config();
 
@@ -14,8 +14,6 @@ const v = process.env.API_VERSION || "v1";
 
 app.use(cors());
 app.use(express.json());
-
-startAvailabilityJob();
 
 // Define your routes here
 app.get("/", (req, res) => {
