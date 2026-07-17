@@ -51,11 +51,8 @@ const userSchema = new mongoose.Schema(
 
     devices: [
       {
-        deviceId: String,
-        lastLogin: Date,
-        data: {
-          type: Object,
-        },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Token",
       },
     ],
   },

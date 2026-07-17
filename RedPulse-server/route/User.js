@@ -3,11 +3,14 @@ import { hashPassword, comparePassword } from "../lib/password.js";
 import { generateToken } from "../lib/jwt.js";
 import userMiddleware from "../middleware/User.js";
 import Token from "../models/Token.js";
+import User from "../models/User.js";
+import { deviceInfo } from "../lib/devie.js";
 
 const router = express.Router();
 
 // Define your user-related routes here
 router.post("/register", async (req, res) => {
+  console.log("Request received at /register with body:", req.body);
   try {
     const { name, email, password, bloodGroup, phone, weight } = req.body;
 
@@ -16,19 +19,28 @@ router.post("/register", async (req, res) => {
         .status(400)
         .json({ message: "All fields are required", success: false });
     }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Email already in use", success: false });
+    }
     const hashpass = await hashPassword(password);
-    const newUser = new User({ password: hashpass, ...req.body });
-    await newUser.save();
+    console.log("Hashed password:", hashpass);
+    const newUser = new User({ ...req.body, password: hashpass });
+
     const token = await generateToken({
       userId: newUser._id,
       role: newUser.role,
     }); // Assuming you have a function to generate JWT tokens
     const device = await deviceInfo(req);
-    await Token.create({
+    const tokenDocument = await Token.create({
       userId: newUser._id,
       token,
       device,
     });
+    newUser.devices.push(tokenDocument._id);
+    await newUser.save();
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Set to true in production
@@ -38,10 +50,12 @@ router.post("/register", async (req, res) => {
       .status(201)
       .json({ message: "User created successfully", success: true, token });
   } catch (error) {
+    console.error("Error in /register route:", error);
     return res.status(500).json({ message: "Server error", success: false });
   }
 });
 
+// Login route
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -83,6 +97,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Get current user route
 router.get("/me", userMiddleware, async (req, res) => {
   try {
     const token = req.token;
@@ -105,6 +120,7 @@ router.get("/me", userMiddleware, async (req, res) => {
   }
 });
 
+// Logout route
 router.post("/logout", userMiddleware, async (req, res) => {
   try {
     const token = req.token;

@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 // routes
 import userRouter from "./route/User.js";
 import cronRouter from "./route/cron.js";
+import { connectDB } from "./lib/db.js";
 
 dotenv.config();
 
@@ -14,14 +15,17 @@ const v = process.env.API_VERSION || "v1";
 
 app.use(cors());
 app.use(express.json());
-app.set("trust proxy", true);
+// app.set("trust proxy", true);
+
+// connect to MongoDB
+connectDB();
 
 // Define your routes here
 app.get("/", (req, res) => {
   res.send("Welcome to the RedPulse server!");
 });
 
-app.use(`api/${v}/user`, userRouter);
+app.use(`/api/${v}/user`, userRouter);
 app.use("/api/cron", cronRouter);
 
 app.use((req, res) => {

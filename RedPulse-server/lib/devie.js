@@ -1,7 +1,7 @@
 // utils/deviceInfo.js
 import { UAParser } from "ua-parser-js"; // v2+ named export; v1 use default `uap`
 
-export const deviceInfo = async (req) => {
+const deviceInfo = async (req) => {
   const userAgent = (await req.headers["user-agent"]) || "";
   const parser = new UAParser(userAgent);
   const result = await parser.getResult();
@@ -31,3 +31,5 @@ export const deviceInfo = async (req) => {
     cpuArchitecture: result.cpu.architecture || "unknown",
   };
 };
+
+export { deviceInfo };

@@ -9,7 +9,11 @@ const tokenSchema = new mongoose.Schema(
     },
     token: { type: String, required: true },
     device: { type: Object }, // Store device information
-    expiresAt: { type: Date, required: true },
+    expiresAt: {
+      type: Date,
+      required: true,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    }, // Default expiration: 30 days
   },
   { timestamps: true },
 );

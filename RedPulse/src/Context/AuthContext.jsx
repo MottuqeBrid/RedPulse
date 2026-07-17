@@ -11,7 +11,7 @@ import axiosInstance from "../lib/axiosInstance";
 export const AuthContext = createContext(null);
 
 const fetchUser = async () => {
-  const { data } = await axiosInstance.get("users/me");
+  const { data } = await axiosInstance.get("user/me");
   return data.user;
 };
 
@@ -50,11 +50,20 @@ export const AuthProvider = ({ children }) => {
     setUser({ ...userData });
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    setUser(null);
-    delete axiosInstance.defaults.headers.common.Authorization;
+  const logout = useCallback(async () => {
+    try {
+      await axiosInstance.post("user/logout", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`,
+        },
+      });
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      setUser(null);
+      delete axiosInstance.defaults.headers.common.Authorization;
+    } catch (error) {
+      console.error("Error occurred while logging out:", error);
+    }
   }, []);
 
   const value = useMemo(
