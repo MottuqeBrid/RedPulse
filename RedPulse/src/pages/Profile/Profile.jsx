@@ -66,6 +66,9 @@ const Profile = () => {
         ? new Date(user.dateOfBirth).toISOString().split("T")[0]
         : "",
       bio: user?.bio || "",
+      lastDonationDate: user?.lastDonationDate
+        ? new Date(user.lastDonationDate).toISOString().split("T")[0]
+        : "",
       address: {
         division: user?.address?.division || "",
         district: user?.address?.district || "",
@@ -180,6 +183,9 @@ const Profile = () => {
         ? new Date(user.dateOfBirth).toISOString().split("T")[0]
         : "",
       bio: user?.bio || "",
+      lastDonationDate: user?.lastDonationDate
+        ? new Date(user.lastDonationDate).toISOString().split("T")[0]
+        : "",
       address: {
         division: user?.address?.division || "",
         district: user?.address?.district || "",
@@ -644,6 +650,21 @@ const Profile = () => {
                         {...register("bio")}
                       ></textarea>
                     </div>
+
+                    {/* Last Donation Date */}
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text flex items-center gap-2">
+                          <FaCalendarAlt className="text-primary" /> Last Donation Date
+                        </span>
+                      </label>
+                      <input
+                        type="date"
+                        className="input input-bordered w-full"
+                        max={new Date().toISOString().split("T")[0]}
+                        {...register("lastDonationDate")}
+                      />
+                    </div>
                   </>
                 )}
 
@@ -853,6 +874,18 @@ const Profile = () => {
                         <p>{user.bio}</p>
                       </div>
                     )}
+
+                    <div className="flex items-center gap-4 p-4 bg-base-200 rounded-lg">
+                      <FaCalendarAlt className="text-primary text-xl" />
+                      <div>
+                        <p className="text-sm text-base-content/60">
+                          Last Donation Date
+                        </p>
+                        <p className="font-medium">
+                          {formatDate(user.lastDonationDate)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 

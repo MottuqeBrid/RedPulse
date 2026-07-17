@@ -5,6 +5,7 @@ import userMiddleware from "../middleware/User.js";
 import Token from "../models/Token.js";
 import User from "../models/User.js";
 import { deviceInfo } from "../lib/devie.js";
+import { checkEligible } from "../lib/checkEligble.js";
 
 const router = express.Router();
 
@@ -31,7 +32,6 @@ router.post("/register", async (req, res) => {
       });
     }
     const hashpass = await hashPassword(password);
-    console.log("Hashed password:", hashpass);
     const newUser = new User({ ...req.body, password: hashpass });
 
     const token = await generateToken({
@@ -44,6 +44,9 @@ router.post("/register", async (req, res) => {
       token,
       device,
     });
+    const isEligible = checkEligible(newUser);
+    newUser.isAvailable = isEligible;
+    await newUser.save();
     newUser.devices.push(tokenDocument._id);
     await newUser.save();
     res.cookie("token", token, {
@@ -120,6 +123,9 @@ router.get("/me", userMiddleware, async (req, res) => {
         .status(404)
         .json({ message: "User not found", success: false });
     }
+    const isEligible = checkEligible(user);
+    user.isAvailable = isEligible;
+    await user.save();
     const tokenExists = await Token.findOne({ userId: user._id, token });
     if (!tokenExists) {
       return res.status(401).json({ message: "Invalid token", success: false });
@@ -217,6 +223,9 @@ router.patch("/update", userMiddleware, async (req, res) => {
         .status(404)
         .json({ message: "User not found", success: false });
     }
+    const isEligible = checkEligible(user);
+    user.isAvailable = isEligible;
+    await user.save();
 
     return res.json({
       message: "User updated successfully",
