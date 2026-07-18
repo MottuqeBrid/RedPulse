@@ -6,6 +6,7 @@ import Token from "../models/Token.js";
 import User from "../models/User.js";
 import { deviceInfo } from "../lib/devie.js";
 import { checkEligible } from "../lib/checkEligble.js";
+import Donation from "../models/Donation.js";
 
 const router = express.Router();
 
@@ -259,7 +260,7 @@ router.delete("/delete", userMiddleware, async (req, res) => {
   }
 });
 
-router.patch("/update/donetion", userMiddleware, async (req, res) => {
+router.patch("/update/donation", userMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     const { lastDonationDate } = req.body;
@@ -298,6 +299,72 @@ router.patch("/update/donetion", userMiddleware, async (req, res) => {
       data: user,
     });
   } catch (error) {
+    console.error("Error updating donation date:", error);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+});
+
+router.get("/donations", userMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const donations = await Donation.find({ user: userId }).sort({
+      date: -1,
+    });
+    return res.status(200).json({
+      message: "Donations retrieved successfully",
+      success: true,
+      data: donations,
+    });
+  } catch (error) {
+    console.error("Error retrieving donations:", error);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+});
+
+router.patch("/donations/:id", userMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const donationId = req.params.id;
+    const { date, images, description } = req.body;
+
+    // Fetch user (excluding password)
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+    }
+
+    // Fetch donation belonging to user
+    const donation = await Donation.findOne({ _id: donationId, user: userId });
+    if (!donation) {
+      return res
+        .status(404)
+        .json({ message: "Donation not found", success: false });
+    }
+
+    // Check eligibility with proposed date (falls back to existing date)
+    const newDate = date || donation.date;
+    const eligible = checkEligible({ ...user, lastDonationDate: newDate });
+
+    // Update user availability and last donation date
+    user.isAvailable = eligible;
+    user.lastDonationDate = newDate;
+    await user.save();
+
+    // Update donation fields
+    if (date) donation.date = date;
+    if (images) donation.images = images;
+    if (description) donation.description = description;
+    await donation.save();
+
+    return res.status(200).json({
+      message: "Donation updated successfully",
+      success: true,
+      data: donation,
+    });
+  } catch (error) {
+    console.error("Error updating donation:", error);
     return res.status(500).json({ message: "Server error", success: false });
   }
 });
