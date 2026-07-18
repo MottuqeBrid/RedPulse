@@ -9,10 +9,10 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import axiosInstance from "../../lib/axiosInstance";
+import { useAuth } from "../../hooks/useAuth";
 
 const ProfileHeader = ({
   user,
-  setUser,
   isEditing,
   isUploadingAvatar,
   uploadStage,
@@ -21,6 +21,7 @@ const ProfileHeader = ({
   onEdit,
   onCancel,
 }) => {
+  const { setUser } = useAuth();
   const fileInputRef = useRef(null);
 
   const getInitials = (name) => {

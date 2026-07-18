@@ -5,6 +5,10 @@ import Login from "../pages/Login/Login";
 import Signup from "../pages/Signup/Signup";
 import NotFound from "../pages/NotFound/NotFound";
 import Profile from "../pages/Profile/Profile";
+import PersonalInfo from "../pages/Profile/PersonalInfo";
+import Address from "../pages/Profile/Address";
+import DonationStats from "../pages/Profile/DonationStats";
+import Requests from "../pages/Profile/Requests";
 import FindDonor from "../pages/FindDonor/FindDonor";
 import DonorProfile from "../pages/DonorProfile/DonorProfile";
 
@@ -28,6 +32,24 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         Component: Profile,
+        children: [
+          {
+            index: true,
+            Component: PersonalInfo,
+          },
+          {
+            path: "address",
+            Component: Address,
+          },
+          {
+            path: "stats",
+            Component: DonationStats,
+          },
+          {
+            path: "requests",
+            Component: Requests,
+          },
+        ],
       },
       {
         path: "find-donor",

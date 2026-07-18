@@ -1,8 +1,8 @@
 import express from "express";
 import User from "../models/User.js";
-import Message from "../models/Message.js";
 import { checkEligible } from "../lib/checkEligble.js";
 import userMiddleware from "../middleware/User.js";
+import Request from "../models/Request.js";
 
 const router = express.Router();
 
@@ -129,104 +129,61 @@ router.get("/:id", userMiddleware, async (req, res) => {
   }
 });
 
-// Send message to donor
-// router.post("/message", userMiddleware, async (req, res) => {
-//   try {
-//     const { receiver, content } = req.body;
-//     const sender = req.user.userId;
-
-//     if (!receiver || !content?.trim()) {
-//       return res
-//         .status(400)
-//         .json({ message: "receiver and content are required", success: false });
-//     }
-
-//     if (sender === receiver) {
-//       return res
-//         .status(400)
-//         .json({ message: "Cannot message yourself", success: false });
-//     }
-
-//     const recipient = await User.findById(receiver);
-//     if (!recipient || recipient.isDeleted) {
-//       return res
-//         .status(404)
-//         .json({ message: "Receiver not found", success: false });
-//     }
-
-//     const message = await Message.create({
-//       sender,
-//       receiver,
-//       content: content.trim(),
-//     });
-
-//     await User.updateMany(
-//       { _id: { $in: [sender, receiver] } },
-//       { $push: { messages: message._id } },
-//     );
-
-//     return res.status(201).json({
-//       message: "Message sent successfully",
-//       success: true,
-//       data: message,
-//     });
-//   } catch (error) {
-//     console.error("Error sending message:", error);
-//     return res.status(500).json({ message: "Server error", success: false });
-//   }
-// });
-
-// routes/message.js
-router.post("/message", userMiddleware, async (req, res) => {
+router.post("/request", userMiddleware, async (req, res) => {
   try {
-    const { receiver, content } = req.body;
-    const sender = req.user.userId;
+    const { donorId, message } = req.body;
+    const senderId = req.user.userId;
 
-    if (!receiver || !content?.trim()) {
+    if (!donorId || !message?.trim()) {
       return res
         .status(400)
-        .json({ message: "receiver and content are required", success: false });
+        .json({ message: "donorId and message are required", success: false });
     }
 
-    if (sender.toString() === receiver.toString()) {
+    if (senderId.toString() === donorId.toString()) {
       return res
         .status(400)
-        .json({ message: "Cannot message yourself", success: false });
+        .json({ message: "Cannot send request to yourself", success: false });
     }
 
-    const recipient = await User.findById(receiver).select(
-      "_id isDeleted isBlocked",
-    );
-    if (!recipient || recipient.isDeleted || recipient.isBlocked) {
+    const donor = await User.findById(donorId);
+    if (!donor) {
       return res
         .status(404)
-        .json({ message: "Receiver not found", success: false });
+        .json({ message: "Donor not found", success: false });
+    }
+    const isEligible = checkEligible(donor);
+    if (!isEligible) {
+      return res.status(400).json({
+        message: "Donor is not eligible to receive requests",
+        success: false,
+      });
     }
 
-    const message = await Message.create({
-      sender,
-      receiver,
-      content: content.trim(),
+    // Create a new request
+    const newRequest = new Request({
+      sender: senderId,
+      receiver: donorId,
+      message,
     });
 
-    await User.findByIdAndUpdate(
-      sender,
-      { $push: { messages: message._id } },
-      { new: true },
-    );
-    await User.findByIdAndUpdate(
-      receiver,
-      { $push: { messages: message._id } },
-      { new: true },
-    );
+    await newRequest.save();
+
+    await User.findByIdAndUpdate(senderId, {
+      $push: { requests: newRequest._id },
+    });
+
+    await User.findByIdAndUpdate(donorId, {
+      $push: { requests: newRequest._id },
+    });
 
     return res.status(201).json({
-      message: "Message sent successfully",
+      message: "Request sent successfully",
       success: true,
-      data: message,
+      data: newRequest,
     });
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("Error sending request:", error);
     return res.status(500).json({ message: "Server error", success: false });
   }
 });

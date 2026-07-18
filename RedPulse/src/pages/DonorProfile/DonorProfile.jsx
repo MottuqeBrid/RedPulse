@@ -23,8 +23,8 @@ const DonorProfile = () => {
   const { user: currentUser, loading: authLoading } = useAuth();
   const [donor, setDonor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [message, setMessage] = useState("");
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -44,27 +44,6 @@ const DonorProfile = () => {
     fetchDonor();
   }, [id, navigate]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!message.trim()) return;
-    setSending(true);
-    try {
-      const res = await axiosInstance.post("donor/message", {
-        receiver: donor._id,
-        content: message.trim(),
-      });
-      if (res.data?.success) {
-        toast.success("Message sent successfully!");
-        setMessage("");
-        setShowMessageModal(false);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send message");
-    } finally {
-      setSending(false);
-    }
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -72,6 +51,29 @@ const DonorProfile = () => {
       month: "long",
       day: "numeric",
     });
+  };
+
+  const handleSendRequest = async (e) => {
+    e.preventDefault();
+    if (!requestMessage.trim()) return;
+    setSending(true);
+    try {
+      const res = await axiosInstance.post("donor/request", {
+        donorId: donor._id,
+        message: requestMessage.trim(),
+      });
+      if (res.data?.success) {
+        toast.success("Blood request sent successfully!");
+        setRequestMessage("");
+        setShowRequestModal(false);
+      }
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Failed to send blood request",
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   if (loading || authLoading) {
@@ -91,7 +93,6 @@ const DonorProfile = () => {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-base-200 py-8 px-4">
       <div className="max-w-3xl mx-auto">
-        {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
           className="btn btn-ghost btn-sm gap-2 mb-6"
@@ -99,10 +100,8 @@ const DonorProfile = () => {
           <FaArrowLeft /> Back
         </button>
 
-        {/* Profile Card */}
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
               {donor.avatar ? (
                 <div className="avatar">
@@ -143,7 +142,6 @@ const DonorProfile = () => {
               </div>
             </div>
 
-            {/* Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               {donor.phone && (
                 <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
@@ -186,7 +184,6 @@ const DonorProfile = () => {
               )}
             </div>
 
-            {/* Address */}
             {donor.address &&
               (donor.address.division ||
                 donor.address.district ||
@@ -214,7 +211,6 @@ const DonorProfile = () => {
                 </div>
               )}
 
-            {/* Donation Info */}
             <div className="mb-6">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <FaHeart className="text-primary" /> Donation History
@@ -245,7 +241,6 @@ const DonorProfile = () => {
               </div>
             </div>
 
-            {/* Bio */}
             {donor.bio && (
               <div className="mb-6">
                 <h3 className="font-semibold mb-2">Bio</h3>
@@ -255,34 +250,34 @@ const DonorProfile = () => {
               </div>
             )}
 
-            {/* Actions */}
             {currentUser && currentUser._id !== donor._id && (
               <div className="card-actions justify-end">
                 <button
-                  onClick={() => setShowMessageModal(true)}
+                  onClick={() => setShowRequestModal(true)}
                   className="btn btn-primary gap-2"
                 >
-                  <FaPaperPlane /> Send Message
+                  <FaPaperPlane /> Request Blood
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Message Modal */}
-        {showMessageModal && (
+        {showRequestModal && (
           <dialog className="modal modal-open">
             <div className="modal-box">
-              <h3 className="font-bold text-lg mb-4">Message {donor.name}</h3>
+              <h3 className="font-bold text-lg mb-4">
+                Blood Request to {donor.name}
+              </h3>
               <form
-                onSubmit={handleSendMessage}
+                onSubmit={handleSendRequest}
                 className="flex flex-col gap-4"
               >
                 <textarea
                   className="textarea textarea-bordered h-32 w-full"
-                  placeholder="Write your message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Describe your blood requirement..."
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
                   required
                 ></textarea>
                 <div className="modal-action">
@@ -290,8 +285,8 @@ const DonorProfile = () => {
                     type="button"
                     className="btn btn-ghost"
                     onClick={() => {
-                      setShowMessageModal(false);
-                      setMessage("");
+                      setShowRequestModal(false);
+                      setRequestMessage("");
                     }}
                   >
                     Cancel
@@ -299,15 +294,17 @@ const DonorProfile = () => {
                   <button
                     type="submit"
                     className={`btn btn-primary gap-2 ${sending ? "loading" : ""}`}
-                    disabled={sending || !message.trim()}
+                    disabled={sending || !requestMessage.trim()}
                   >
-                    <FaPaperPlane /> {sending ? "Sending..." : "Send"}
+                    <FaPaperPlane /> {sending ? "Sending..." : "Send Request"}
                   </button>
                 </div>
               </form>
             </div>
             <form method="dialog" className="modal-backdrop">
-              <button onClick={() => setShowMessageModal(false)}>close</button>
+              <button onClick={() => setShowRequestModal(false)}>
+                close
+              </button>
             </form>
           </dialog>
         )}

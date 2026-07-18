@@ -27,10 +27,10 @@ const userSchema = new mongoose.Schema(
       details: String,
     },
 
-    messages: [
+    requests: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Message",
+        ref: "Request",
       },
     ],
 
@@ -49,11 +49,16 @@ const userSchema = new mongoose.Schema(
     isWillingToDonate: { type: Boolean, default: true }, // donor willing to donate or not
     lastDonationDate: { type: Date },
     totalDonations: { type: Number, default: 0 },
+    donations: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Donation",
+      },
+    ],
 
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
-
     avatar: { type: String },
     uploads: [
       {

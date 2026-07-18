@@ -259,4 +259,47 @@ router.delete("/delete", userMiddleware, async (req, res) => {
   }
 });
 
+router.patch("/update/donetion", userMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { lastDonationDate } = req.body;
+    if (!lastDonationDate) {
+      return res
+        .status(400)
+        .json({ message: "lastDonationDate is required", success: false });
+    }
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+    }
+    const eligible = checkEligible(user);
+    if (!eligible) {
+      return res.status(400).json({
+        message: "User is not eligible to update donation date",
+        success: false,
+      });
+    }
+    const donation = new Donation({
+      user: userId,
+      date: lastDonationDate,
+      images: req.body.images || [],
+      description: req.body.description || "",
+    });
+    await donation.save();
+    user.donations.push(donation._id);
+    user.lastDonationDate = lastDonationDate;
+    user.totalDonations += 1;
+    await user.save();
+    return res.status(200).json({
+      message: "Donation date updated successfully",
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+});
+
 export default router;

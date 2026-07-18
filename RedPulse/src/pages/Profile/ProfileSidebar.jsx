@@ -1,40 +1,41 @@
+import { NavLink } from "react-router";
 import {
   FaUser,
   FaMapMarkerAlt,
   FaHeart,
-  FaEnvelope,
+  FaHandHoldingMedical,
 } from "react-icons/fa";
 
 const navItems = [
-  { id: "info", label: "Personal Info", icon: FaUser },
-  { id: "address", label: "Address", icon: FaMapMarkerAlt },
-  { id: "stats", label: "Donation Stats", icon: FaHeart },
-  { id: "messages", label: "Messages", icon: FaEnvelope },
+  { to: "/profile", label: "Personal Info", icon: FaUser, end: true },
+  { to: "/profile/address", label: "Address", icon: FaMapMarkerAlt },
+  { to: "/profile/stats", label: "Donation Stats", icon: FaHeart },
+  { to: "/profile/requests", label: "Blood Requests", icon: FaHandHoldingMedical },
 ];
 
-const ProfileSidebar = ({ activeTab, setActiveTab, unreadCount }) => {
+const ProfileSidebar = ({ unreadCount }) => {
   return (
     <nav className="bg-base-100 rounded-box shadow-xl p-2">
       <ul className="menu w-full">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
           return (
-            <li key={item.id}>
-              <button
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 w-full text-left ${
-                  isActive ? "active font-semibold" : ""
-                }`}
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 w-full text-left ${isActive ? "active font-semibold" : ""}`
+                }
               >
                 <Icon className="text-lg" />
                 <span className="flex-1">{item.label}</span>
-                {item.id === "messages" && unreadCount > 0 && (
+                {item.to === "/profile/requests" && unreadCount > 0 && (
                   <span className="badge badge-primary badge-sm">
                     {unreadCount}
                   </span>
                 )}
-              </button>
+              </NavLink>
             </li>
           );
         })}
