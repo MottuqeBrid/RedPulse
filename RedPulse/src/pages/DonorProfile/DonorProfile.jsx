@@ -20,7 +20,7 @@ import {
 const DonorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [donor, setDonor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -74,12 +74,16 @@ const DonorProfile = () => {
     });
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
         <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
+  }
+
+  if (currentUser && currentUser._id === id) {
+    return navigate("/profile");
   }
 
   if (!donor) return null;
@@ -269,12 +273,13 @@ const DonorProfile = () => {
         {showMessageModal && (
           <dialog className="modal modal-open">
             <div className="modal-box">
-              <h3 className="font-bold text-lg mb-4">
-                Message {donor.name}
-              </h3>
-              <form onSubmit={handleSendMessage} className="flex flex-col gap-4">
+              <h3 className="font-bold text-lg mb-4">Message {donor.name}</h3>
+              <form
+                onSubmit={handleSendMessage}
+                className="flex flex-col gap-4"
+              >
                 <textarea
-                  className="textarea textarea-bordered h-32"
+                  className="textarea textarea-bordered h-32 w-full"
                   placeholder="Write your message..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}

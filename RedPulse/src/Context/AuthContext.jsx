@@ -12,6 +12,7 @@ export const AuthContext = createContext(null);
 
 const fetchUser = async () => {
   const { data } = await axiosInstance.get("user/me");
+  console.log("Fetched user data:", data);
   return data.data;
 };
 
@@ -40,6 +41,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = useCallback(async (token, rememberMe = false) => {
+    console.log(
+      "Login function called with token:",
+      token,
+      "rememberMe:",
+      rememberMe,
+    );
     if (rememberMe) {
       localStorage.setItem("token", token);
     } else {

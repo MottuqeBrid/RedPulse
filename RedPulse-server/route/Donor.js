@@ -15,7 +15,14 @@ const calcAge = (dob) => {
 // Search for available donors by blood group and optional location
 router.get("/search", async (req, res) => {
   try {
-    const { bloodGroup, division, district, upazila, page = 1, limit = 20 } = req.query;
+    const {
+      bloodGroup,
+      division,
+      district,
+      upazila,
+      page = 1,
+      limit = 20,
+    } = req.query;
 
     if (!bloodGroup) {
       return res
@@ -123,6 +130,53 @@ router.get("/:id", userMiddleware, async (req, res) => {
 });
 
 // Send message to donor
+// router.post("/message", userMiddleware, async (req, res) => {
+//   try {
+//     const { receiver, content } = req.body;
+//     const sender = req.user.userId;
+
+//     if (!receiver || !content?.trim()) {
+//       return res
+//         .status(400)
+//         .json({ message: "receiver and content are required", success: false });
+//     }
+
+//     if (sender === receiver) {
+//       return res
+//         .status(400)
+//         .json({ message: "Cannot message yourself", success: false });
+//     }
+
+//     const recipient = await User.findById(receiver);
+//     if (!recipient || recipient.isDeleted) {
+//       return res
+//         .status(404)
+//         .json({ message: "Receiver not found", success: false });
+//     }
+
+//     const message = await Message.create({
+//       sender,
+//       receiver,
+//       content: content.trim(),
+//     });
+
+//     await User.updateMany(
+//       { _id: { $in: [sender, receiver] } },
+//       { $push: { messages: message._id } },
+//     );
+
+//     return res.status(201).json({
+//       message: "Message sent successfully",
+//       success: true,
+//       data: message,
+//     });
+//   } catch (error) {
+//     console.error("Error sending message:", error);
+//     return res.status(500).json({ message: "Server error", success: false });
+//   }
+// });
+
+// routes/message.js
 router.post("/message", userMiddleware, async (req, res) => {
   try {
     const { receiver, content } = req.body;
@@ -134,14 +188,16 @@ router.post("/message", userMiddleware, async (req, res) => {
         .json({ message: "receiver and content are required", success: false });
     }
 
-    if (sender === receiver) {
+    if (sender.toString() === receiver.toString()) {
       return res
         .status(400)
         .json({ message: "Cannot message yourself", success: false });
     }
 
-    const recipient = await User.findById(receiver);
-    if (!recipient || recipient.isDeleted) {
+    const recipient = await User.findById(receiver).select(
+      "_id isDeleted isBlocked",
+    );
+    if (!recipient || recipient.isDeleted || recipient.isBlocked) {
       return res
         .status(404)
         .json({ message: "Receiver not found", success: false });
@@ -153,9 +209,15 @@ router.post("/message", userMiddleware, async (req, res) => {
       content: content.trim(),
     });
 
-    await User.updateMany(
-      { _id: { $in: [sender, receiver] } },
+    await User.findByIdAndUpdate(
+      sender,
       { $push: { messages: message._id } },
+      { new: true },
+    );
+    await User.findByIdAndUpdate(
+      receiver,
+      { $push: { messages: message._id } },
+      { new: true },
     );
 
     return res.status(201).json({

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../hooks/useAuth";
+import useAxios from "../../hooks/useAxios";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { user, login, loading } = useAuth();
+  const app = useAxios();
 
   if (user && !loading) {
     return navigate("/profile");
@@ -16,9 +19,16 @@ const Login = () => {
     return <div>Loading...</div>;
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login(email, password);
+    const { data } = await app.post("/user/login", { email, password });
+    if (!data.success) {
+      toast.error(data.message);
+      return;
+    }
+    toast.success(data.message || "Login successful");
+    login(data.token, true);
+    navigate("/profile");
   };
 
   return (

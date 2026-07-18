@@ -79,7 +79,9 @@ const FindDonor = () => {
       }
     };
     fetchDistricts();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [division]);
 
   useEffect(() => {
@@ -93,7 +95,7 @@ const FindDonor = () => {
         );
         const data = await res.json();
         if (!cancelled && data.status?.code === 200 && data.data?.length > 0) {
-          const raw = data.data[0].upazilla || [];
+          const raw = data.data[0].upazillas || [];
           setUpazilas(raw.map((u) => (typeof u === "string" ? u : u.en || "")));
         }
       } catch {
@@ -103,7 +105,9 @@ const FindDonor = () => {
       }
     };
     fetchUpazilas();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [district]);
 
   const searchDonors = useCallback(
@@ -115,12 +119,18 @@ const FindDonor = () => {
       setSearching(true);
       setHasSearched(true);
       try {
-        const params = new URLSearchParams({ bloodGroup, page: pageNum, limit: 12 });
+        const params = new URLSearchParams({
+          bloodGroup,
+          page: pageNum,
+          limit: 12,
+        });
         if (division) params.append("division", division);
         if (district) params.append("district", district);
         if (upazila) params.append("upazila", upazila);
 
-        const res = await axiosInstance.get(`donor/search?${params.toString()}`);
+        const res = await axiosInstance.get(
+          `donor/search?${params.toString()}`,
+        );
         if (res.data?.success) {
           setDonors(res.data.data);
           setTotal(res.data.total);
@@ -353,11 +363,13 @@ const FindDonor = () => {
                           </div>
                           {donor.isAvailable ? (
                             <div className="badge badge-success badge-sm gap-1">
-                              <FaCheckCircle className="w-2.5 h-2.5" /> Available
+                              <FaCheckCircle className="w-2.5 h-2.5" />{" "}
+                              Available
                             </div>
                           ) : (
                             <div className="badge badge-error badge-sm gap-1">
-                              <FaTimesCircle className="w-2.5 h-2.5" /> Unavailable
+                              <FaTimesCircle className="w-2.5 h-2.5" />{" "}
+                              Unavailable
                             </div>
                           )}
                         </div>
@@ -402,7 +414,9 @@ const FindDonor = () => {
 
                       <div className="flex items-center gap-2 text-base-content/70">
                         <FaCalendarAlt className="w-3.5 h-3.5" />
-                        <span>Last donated: {formatDate(donor.lastDonationDate)}</span>
+                        <span>
+                          Last donated: {formatDate(donor.lastDonationDate)}
+                        </span>
                       </div>
                     </div>
 
