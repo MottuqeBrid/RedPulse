@@ -4,6 +4,7 @@ import {
   FaMapMarkerAlt,
   FaHeart,
   FaHandHoldingMedical,
+  FaPenNib,
 } from "react-icons/fa";
 
 const navItems = [
@@ -11,6 +12,7 @@ const navItems = [
   { to: "/profile/address", label: "Address", icon: FaMapMarkerAlt },
   { to: "/profile/stats", label: "Donation Stats", icon: FaHeart },
   { to: "/profile/requests", label: "Blood Requests", icon: FaHandHoldingMedical },
+  { to: "/profile/blogs", label: "My Blogs", icon: FaPenNib },
 ];
 
 const ProfileSidebar = ({ unreadCount }) => {

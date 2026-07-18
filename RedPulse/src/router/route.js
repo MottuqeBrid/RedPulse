@@ -9,8 +9,13 @@ import PersonalInfo from "../pages/Profile/PersonalInfo";
 import Address from "../pages/Profile/Address";
 import DonationStats from "../pages/Profile/DonationStats";
 import Requests from "../pages/Profile/Requests";
+import MyBlogs from "../pages/Profile/MyBlogs";
+import CreateBlog from "../pages/Profile/CreateBlog";
+import EditBlog from "../pages/Profile/EditBlog";
 import FindDonor from "../pages/FindDonor/FindDonor";
 import DonorProfile from "../pages/DonorProfile/DonorProfile";
+import BlogList from "../pages/Blogs/BlogList";
+import BlogView from "../pages/Blogs/BlogView";
 
 export const router = createBrowserRouter([
   {
@@ -49,7 +54,27 @@ export const router = createBrowserRouter([
             path: "requests",
             Component: Requests,
           },
+          {
+            path: "blogs",
+            Component: MyBlogs,
+          },
+          {
+            path: "blogs/create",
+            Component: CreateBlog,
+          },
+          {
+            path: "blogs/edit/:id",
+            Component: EditBlog,
+          },
         ],
+      },
+      {
+        path: "blogs",
+        Component: BlogList,
+      },
+      {
+        path: "blogs/:id",
+        Component: BlogView,
       },
       {
         path: "find-donor",

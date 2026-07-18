@@ -9,6 +9,7 @@ import cronRouter from "./route/cron.js";
 import uploadRouter from "./route/Upload.js";
 import donorRouter from "./route/Donor.js";
 import requestRouter from "./route/Request.js";
+import blogRouter from "./route/Blog.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use(`/api/${v}/user`, userRouter);
 app.use(`/api/${v}/donor`, donorRouter);
 app.use(`/api/${v}/upload`, uploadRouter);
 app.use(`/api/${v}/request`, requestRouter);
+app.use(`/api/${v}/blog`, blogRouter);
 app.use("/api/cron", cronRouter);
 
 // 404 handler for undefined routes
