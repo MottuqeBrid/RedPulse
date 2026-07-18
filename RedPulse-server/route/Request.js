@@ -77,16 +77,18 @@ router.get("/receive", userMiddleware, async (req, res) => {
 router.patch("/:id/read", userMiddleware, async (req, res) => {
   try {
     const requestId = req.params.id;
-    const request = await Request.findOneAndUpdate(
-      { _id: requestId, receiver: req.user.userId },
-      { isRead: true },
-      { new: true },
-    );
+    const request = await Request.findOne({
+      _id: requestId,
+      receiver: req.user.userId,
+    });
     if (!request) {
       return res
         .status(404)
         .json({ message: "Request not found", success: false });
     }
+
+    request.isRead = true;
+    await request.save();
 
     return res.status(200).json({
       message: "Request marked as read",
@@ -102,16 +104,17 @@ router.patch("/:id/read", userMiddleware, async (req, res) => {
 router.delete("/:id", userMiddleware, async (req, res) => {
   try {
     const requestId = req.params.id;
-    const request = await Request.findOneAndUpdate(
-      { _id: requestId, receiver: req.user.userId },
-      { isDeleted: true },
-      { new: true },
-    );
+    const request = await Request.findOne({
+      _id: requestId,
+      receiver: req.user.userId,
+    });
     if (!request) {
       return res
         .status(404)
         .json({ message: "Request not found", success: false });
     }
+    request.isDeleted = true;
+    await request.save();
     return res.status(200).json({
       message: "Request deleted successfully",
       success: true,
@@ -127,16 +130,23 @@ router.patch("/:id/status", userMiddleware, async (req, res) => {
   try {
     const requestId = req.params.id;
     const { status } = req.body;
-    const request = await Request.findOneAndUpdate(
-      { _id: requestId, receiver: req.user.userId },
-      { status },
-      { new: true },
-    );
+    const request = await Request.findOne({
+      _id: requestId,
+      receiver: req.user.userId,
+    });
     if (!request) {
       return res
         .status(404)
         .json({ message: "Request not found", success: false });
     }
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status. Must be 'accepted' or 'rejected'",
+        success: false,
+      });
+    }
+    request.status = status;
+    await request.save();
     return res.status(200).json({
       message: "Request status updated successfully",
       success: true,

@@ -81,18 +81,18 @@ router.get("/my", userMiddleware, async (req, res) => {
 // Get a single blog by ID
 router.get("/:id", async (req, res) => {
   try {
-    const blog = await Blog.findOneAndUpdate(
-      { _id: req.params.id, ...ACTIVE_BLOG_FILTER },
-      { $inc: { visitor: 1 } },
-      { new: true },
-    ).populate("author", "name email avatar");
+    const blog = await Blog.findOne({
+      _id: req.params.id,
+      ...ACTIVE_BLOG_FILTER,
+    }).populate("author", "name email avatar");
 
     if (!blog) {
       return res
         .status(404)
         .json({ message: "Blog not found", success: false });
     }
-
+    blog.visitor = (blog.visitor || 0) + 1;
+    await blog.save();
     return res.status(200).json({ success: true, data: blog });
   } catch (error) {
     console.error("Error fetching blog:", error);
@@ -140,11 +140,19 @@ router.patch("/:id", userMiddleware, async (req, res) => {
         .json({ message: "No valid fields to update", success: false });
     }
 
-    const blog = await Blog.findOneAndUpdate(
-      { _id: req.params.id, author: req.user.userId },
-      updates,
-      { new: true, runValidators: true },
-    );
+    const blog = await Blog.findOne({
+      _id: req.params.id,
+      author: req.user.userId,
+    });
+
+    if (!blog) {
+      return res
+        .status(404)
+        .json({ message: "Blog not found", success: false });
+    }
+
+    Object.assign(blog, updates);
+    await blog.save();
 
     if (!blog) {
       return res
@@ -162,18 +170,18 @@ router.patch("/:id", userMiddleware, async (req, res) => {
 // Delete a blog (requires authentication)
 router.delete("/:id", userMiddleware, async (req, res) => {
   try {
-    const blog = await Blog.findOneAndUpdate(
-      { _id: req.params.id, author: req.user.userId },
-      { isDeleted: true },
-      { new: true },
-    );
+    const blog = await Blog.findOne({
+      _id: req.params.id,
+      author: req.user.userId,
+    });
 
     if (!blog) {
       return res
         .status(404)
         .json({ message: "Blog not found", success: false });
     }
-
+    blog.isDeleted = true;
+    await blog.save();
     return res.status(200).json({ success: true, message: "Blog deleted" });
   } catch (error) {
     console.error("Error deleting blog:", error);

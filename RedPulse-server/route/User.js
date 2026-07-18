@@ -154,7 +154,7 @@ router.post("/logout", userMiddleware, async (req, res) => {
 
 router.patch("/update", userMiddleware, async (req, res) => {
   try {
-    const { password, email, ...updateData } = req.body;
+    const { password, email, phone, ...updateData } = req.body;
     const userId = req.user.userId;
     const { fields } = await req.query;
 
@@ -182,8 +182,8 @@ router.patch("/update", userMiddleware, async (req, res) => {
         data: user,
       });
     }
-    if (fields == "email" && updateData.email) {
-      const existingEmailUser = await User.findOne({ email: updateData.email });
+    if (fields == "email" && email) {
+      const existingEmailUser = await User.findOne({ email });
       if (existingEmailUser) {
         return res
           .status(400)
@@ -199,7 +199,7 @@ router.patch("/update", userMiddleware, async (req, res) => {
       });
     }
 
-    if (fields == "phone" && updateData.phone) {
+    if (fields == "phone" && phone) {
       const existingPhoneUser = await User.findOne({ phone: updateData.phone });
       if (existingPhoneUser) {
         return res
